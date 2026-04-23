@@ -1,0 +1,29 @@
+## Monte Carlo-Based RDP Failure Predictor
+
+“I built a system that predicts RDP session failures using Monte Carlo simulation and dynamically routes users using reinforcement learning to maximize session success and minimize infrastructure overload.”
+
+Goal:
+Before assigning a user session, predict:
+
+“What is the probability this RDP session will fail?”
+
+Step 1: Define the System Model
+
+Simulate real infra:
+
+Entities:
+Terminal Servers (TS1, TS2, TS3…)
+Incoming Users (RDP sessions)
+Resources:
+    CPU
+    Memory
+    Active sessions
+
+Failure Conditions (Critical):
+
+A session fails if ANY of these happen:
+
+CPU > 85%
+Memory > 90%
+Active Sessions > Max Limit
+Network latency > threshold
