@@ -1,0 +1,36 @@
+{
+  "servers": [
+    {
+        "name": "TS0",
+        "cpu": 10,
+        "memory": 25,
+        "active_sessions": 15,
+        "max_sessions": 50,
+        "latency": 150
+    },
+    {
+        "name": "TS1",
+        "cpu": 70,
+        "memory": 75,
+        "active_sessions": 45,
+        "max_sessions": 50,
+        "latency": 150
+    },
+    {
+        "name": "TS2",
+        "cpu": 18,
+        "memory": 75,
+        "active_sessions": 5,
+        "max_sessions": 50,
+        "latency": 120
+    },
+    {
+        "name": "TS3",
+        "cpu": 40,
+        "memory": 35,
+        "active_sessions": 49,
+        "max_sessions": 50,
+        "latency": 180
+    }
+  ]
+}

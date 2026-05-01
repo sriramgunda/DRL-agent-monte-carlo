@@ -27,3 +27,6 @@ CPU > 85%
 Memory > 90%
 Active Sessions > Max Limit
 Network latency > threshold
+
+## Start the app using uvicorn
+uvicorn main:app --reload
