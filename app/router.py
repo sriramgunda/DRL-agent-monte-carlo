@@ -161,7 +161,7 @@ def route_request_q_learning(servers):
         "ranking": ranked
     }
 
-def route_request(servers):
+def route_request_dqn_not_using(servers):
     # Step 1: Build state + risk
     state, risks = build_state(servers)
     action_dim = len(servers)
@@ -245,4 +245,46 @@ def route_request(servers):
             }
             for i, s in enumerate(servers)
         ]
+    }
+
+
+def route_request(servers):
+    dqn_agent = DQNAgent(input_dim=5)  # dynamic features per server
+    dqn_agent.load()
+
+    best_score = -float("inf")
+    best_index = None
+    explanations = []
+
+    for i, s in enumerate(servers):
+
+        risk = monte_carlo_time(s)
+
+        # per-server state
+        state = [
+            s["cpu"] / 100,
+            s["memory"] / 100,
+            s["latency"] / 300,
+            s["active_sessions"] / s["max_sessions"],
+            risk
+        ]
+
+        score = dqn_agent.predict_score(state)
+
+        explanations.append({
+            "name": s["name"],
+            "score": round(score, 3),
+            "risk": round(risk, 2)
+        })
+
+        if score > best_score:
+            best_score = score
+            best_index = i
+
+    selected = servers[best_index]
+
+    return {
+        "selected_server": selected["name"],
+        "score": round(best_score, 3),
+        "ranking": sorted(explanations, key=lambda x: -x["score"])
     }

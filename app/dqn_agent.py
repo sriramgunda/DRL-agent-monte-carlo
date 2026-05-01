@@ -6,14 +6,14 @@ import numpy as np
 import os
 
 class DQN(nn.Module):
-    def __init__(self, input_dim, output_dim):
+    def __init__(self, input_dim):
         super(DQN, self).__init__()
         self.net = nn.Sequential(
             nn.Linear(input_dim, 64),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(64, output_dim)
+            nn.Linear(32, 1)  #single score output
         )
 
     def forward(self, x):
@@ -21,13 +21,12 @@ class DQN(nn.Module):
 
 
 class DQNAgent:
-    def __init__(self, state_dim, action_dim):
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.model = DQN(state_dim, action_dim)
+    def __init__(self, input_dim):
+        self.model = DQN(input_dim)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.memory = []
         self.gamma = 0.9
+        print("DQN initialized with input_dim =", input_dim)
 
     def act(self, state, epsilon=0.1):
         if random.random() < epsilon:
@@ -36,6 +35,10 @@ class DQNAgent:
         state = torch.FloatTensor(state)
         q_values = self.model(state)
         return torch.argmax(q_values).item()
+    
+    def predict_score(self, state):
+        state = torch.FloatTensor(state).unsqueeze(0)
+        return self.model(state).item()
 
     def train(self, batch_size=32):
         if len(self.memory) < batch_size:
@@ -43,14 +46,19 @@ class DQNAgent:
 
         batch = random.sample(self.memory, batch_size)
 
-        for state, action, reward, next_state in batch:
-            state = torch.FloatTensor(state)
-            next_state = torch.FloatTensor(next_state)
+        for state, reward, next_state in batch:
+            state = torch.FloatTensor(state).unsqueeze(0)
+            next_state = torch.FloatTensor(next_state).unsqueeze(0)
 
-            target = reward + self.gamma * torch.max(self.model(next_state)).item()
+            # Q(s)
+            current_q = self.model(state)
 
-            output = self.model(state)[action]
-            loss = (output - target) ** 2
+            # Q(s')
+            next_q = self.model(next_state).detach()
+
+            target = reward + self.gamma * next_q
+
+            loss = (current_q - target) ** 2
 
             self.optimizer.zero_grad()
             loss.backward()

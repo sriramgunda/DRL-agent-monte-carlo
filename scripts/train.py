@@ -1,4 +1,5 @@
 from pathlib import Path
+from pyexpat import model
 import sys
 
 # Ensure project root is on sys.path so `app` package imports work
@@ -7,6 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.rdp_env import RDPEnv
 from app.drl_agent import choose_action, update_q, save_model
 from app.dqn_agent import DQNAgent
+from app.monte_carlo import monte_carlo_time
+import numpy as np
 
 servers = [
     {
@@ -45,6 +48,17 @@ servers = [
 
 env = RDPEnv(servers)
 
+def build_server_state(server):
+    risk = monte_carlo_time(server)
+
+    return [
+        server["cpu"] / 100,
+        server["memory"] / 100,
+        server["latency"] / 300,
+        server["active_sessions"] / server["max_sessions"],
+        risk
+    ]
+
 def q_learning_train():
 
     for episode in range(100):
@@ -62,8 +76,9 @@ def q_learning_train():
             state = next_state
 
 def double_q_learning_train():
-    state = env.reset()
-    agent = DQNAgent(state_dim=len(state), action_dim=len(servers))
+    #state = env.reset()
+    #agent = DQNAgent(state_dim=len(state), action_dim=len(servers))
+    agent = DQNAgent(input_dim=5)  # 5 features per server
 
     for episode in range(100):
         print("-" * 20)
@@ -73,13 +88,32 @@ def double_q_learning_train():
 
         for step in range(50):
             print(f"Step: {step + 1}/50")
-            action = agent.act(state)
-            next_state, reward, _, _ = env.step(action)
+            #action = agent.act(state)
+            scores = []
+            states = []
 
-            agent.memory.append((state, action, reward, next_state))
+            for s in servers:
+                state = build_server_state(s)  # get current state for each server
+                states.append(state)
+
+                score = agent.predict_score(state)
+                scores.append(score)
+
+            # Choose best server
+            action = np.argmax(scores)
+
+            # Take action in env
+            next_state_env, reward, _, info = env.step(action)
+
+            # Store ONLY selected server state
+            state = states[action]
+
+            # Build next state for same server
+            next_state = build_server_state(servers[action])
+
+            agent.memory.append((state, reward, next_state))
+
             agent.train()
-
-            state = next_state
     
     agent.save(path="data/dqn_model.pth")
 
