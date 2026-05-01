@@ -1,5 +1,6 @@
 import numpy as np
 import pickle
+import os
 
 q_table = {}
 
@@ -29,11 +30,15 @@ def choose_server(state):
 
 
 def save_model(path="data/q_table.pkl"):
+    os.makedirs("data", exist_ok=True)
     with open(path, "wb") as f:
         pickle.dump(q_table, f)
 
 
 def load_model(path="data/q_table.pkl"):
     global q_table
-    with open(path, "rb") as f:
-        q_table = pickle.load(f)
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            q_table = pickle.load(f)
+    else:
+        print("Q-table not found, starting fresh")

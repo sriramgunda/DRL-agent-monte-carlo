@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.rdp_env import RDPEnv
 from app.drl_agent import choose_action, update_q, save_model
+from app.dqn_agent import DQNAgent
 
 servers = [
     {
@@ -44,19 +45,50 @@ servers = [
 
 env = RDPEnv(servers)
 
-for episode in range(100):
-    print("-" * 20)
-    print(f"Episode {episode + 1}/100")
-    print("-" * 20)
+def q_learning_train():
+
+    for episode in range(100):
+        print("-" * 20)
+        print(f"Episode: {episode + 1}/100")
+        print("-" * 20)
+        state = env.reset()
+
+        for step in range(50):
+            print(f"Step: {step + 1}/50")
+            action = choose_action(state)
+            next_state, reward, done, _ = env.step(action)
+
+            update_q(state, action, reward, next_state)
+            state = next_state
+
+def double_q_learning_train():
     state = env.reset()
+    agent = DQNAgent(state_dim=len(state), action_dim=len(servers))
 
-    for step in range(50):
-        print(f"Step {step + 1}/50")
-        action = choose_action(state)
-        next_state, reward, done, _ = env.step(action)
+    for episode in range(100):
+        print("-" * 20)
+        print(f"Episode: {episode + 1}/100")
+        print("-" * 20)
+        state = env.reset()
 
-        update_q(state, action, reward, next_state)
-        state = next_state
+        for step in range(50):
+            print(f"Step: {step + 1}/50")
+            action = agent.act(state)
+            next_state, reward, _, _ = env.step(action)
 
+            agent.memory.append((state, action, reward, next_state))
+            agent.train()
+
+            state = next_state
+    
+    agent.save(path="data/dqn_model.pth")
+
+
+q_learning_train()
 save_model()
+print("Q-learning training complete, model saved.")
+
+double_q_learning_train()
+print("DQN training complete, model saved")
+
 print("Training complete")

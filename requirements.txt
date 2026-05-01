@@ -2,3 +2,6 @@ fastapi
 uvicorn
 numpy
 pickle-mixin
+torch
+streamlit
+requests
